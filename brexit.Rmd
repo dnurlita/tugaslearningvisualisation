@@ -19,7 +19,9 @@ In September 2019, YouGov survey asked 1,639 GB adults the following question:
 The data from the survey are in `data/brexit.csv`.
 
 ```{r message = FALSE}
+library(readr)
 brexit <- read_csv("data/brexit.csv")
+View(brexit)
 ```
 
 In the course video we made the following visualisation.
@@ -59,7 +61,7 @@ Add `scales = "free_x"` as an argument to the `facet_wrap()` function. How does 
 ggplot(brexit, aes(y = opinion, fill = opinion)) +
   geom_bar() +
   facet_wrap(~region,
-    nrow = 1, labeller = label_wrap_gen(width = 12),
+    nrow = 1, labeller = label_wrap_gen(width = 12), scales = "free_x"
     # ___
   ) +
   guides(fill = FALSE) +
@@ -82,7 +84,30 @@ ggplot(brexit, aes(y = opinion, fill = opinion)) +
 First, calculate the proportion of wrong, right, and don't know answers in each category and then plot these proportions (rather than the counts) and then improve axis labeling. How is the story this visualisation telling different than the story the original plot tells? **Hint:** You'll need the **scales** package to improve axis labeling, which means you'll need to load it on top of the document as well.
 
 ```{r}
-# code goes here
+library(scales)
+brexit_prop <- brexit %>%
+  group_by(region, opinion) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  mutate(prop = count / sum(count))  # Menghitung proporsi
+
+ggplot(brexit_prop, aes(x = region, y = prop, fill = opinion)) +
+  geom_bar(stat = "identity", position = "stack") +
+  facet_wrap(~region, nrow = 1, labeller = label_wrap_gen(width = 12)) +
+  scale_y_continuous(labels = percent_format()) +  # Gunakan persen pada sumbu y
+  guides(fill = guide_legend(title = "Opinion")) +
+  labs(
+    title = "Proportion of Opinions on Brexit by Region",
+    subtitle = "YouGov Survey Results, 2-3 September 2019",
+    caption = "Source: bit.ly/2lCJZVg",
+    x = NULL, y = "Percentage"
+  ) +
+  scale_fill_manual(values = c(
+    "Wrong" = "#ef8a62",
+    "Right" = "#67a9cf",
+    "Don't know" = "gray"
+  )) +
+  theme_minimal()
+
 ```
 
 ### Exercise 3 - Comparing proportions across bars
@@ -90,5 +115,21 @@ First, calculate the proportion of wrong, right, and don't know answers in each 
 Recreate the same visualisation from the previous exercise, this time dodging the bars for opinion proportions for each region, rather than faceting by region and then improve the legend. How is the story this visualisation telling different than the story the previous plot tells?
 
 ```{r}
-# code goes here
+ggplot(brexit_prop, aes(x = region, y = prop, fill = opinion)) +
+  geom_bar(stat = "identity", position = "dodge") +  # Menggunakan dodge agar berdampingan
+  scale_y_continuous(labels = percent_format()) +
+  guides(fill = guide_legend(title = "Opinion on Brexit")) +
+  labs(
+    title = "Comparison of Brexit Opinions Across Regions",
+    subtitle = "YouGov Survey Results, 2-3 September 2019",
+    caption = "Source: bit.ly/2lCJZVg",
+    x = "Region", y = "Percentage"
+  ) +
+  scale_fill_manual(values = c(
+    "Wrong" = "#ef8a62",
+    "Right" = "#67a9cf",
+    "Don't know" = "gray"
+  )) +
+  theme_minimal()
+
 ```
